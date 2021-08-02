@@ -11,6 +11,7 @@
 const SHA256 = require('crypto-js/sha256');
 const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
+const { handleError } = require('./util');
 
 class Blockchain {
 
@@ -79,7 +80,7 @@ class Blockchain {
                 self.chain.push(block);
                 resolve(block);
             } catch (error) {
-                self._handleError(error, "_addBlock", reject);
+                handleError(error, "_addBlock", reject);
             }
         });
     }
@@ -122,7 +123,8 @@ class Blockchain {
                 const messageTime = parseInt(message.split(':')[1]);
                 const currentTime = parseInt(self._getCurrentTimeString());
                 // Check if time elapsed is less than 5 minutes
-                if (currentTime - messageTime >= 300) {
+                const fiveMinutesInSeconds = 300;
+                if (currentTime - messageTime >= fiveMinutesInSeconds) {
                     reject("Too much time has passed since the message was created");
                 }
                 const isVerified = bitcoinMessage.verify(message, address, signature);
@@ -135,7 +137,7 @@ class Blockchain {
                 });
                 resolve(self._addBlock(block));
             } catch (error) {
-                self._handleError(error, "submitStar", reject);
+                handleError(error, "submitStar", reject);
             }
         });
     }
@@ -163,10 +165,10 @@ class Blockchain {
         const self = this;
         return new Promise((resolve, reject) => {
             try {
-                const block = self.chain.filter(p => p.height === height)[0];
+                const block = self.chain.find(p => p.height === height);
                 resolve(block);
             } catch (error) {
-                self._handleError(error, "getBlockByHeight", reject);
+                handleError(error, "getBlockByHeight", reject);
             }
         });
     }
@@ -221,7 +223,7 @@ class Blockchain {
                 const onlyErrors = errorLog.filter(err => err !== null);
                 resolve(onlyErrors);
             } catch (error) {
-                self._handleError(error, "validateChain", reject);
+                handleError(error, "validateChain", reject);
             }
             
         });
@@ -230,13 +232,6 @@ class Blockchain {
     _getCurrentTimeString() {
         return new Date().getTime().toString().slice(0, -3);
     }
-
-    _handleError(error, methodName, reject) {
-        const errorMessage = `${methodName} threw an error: ${JSON.stringify(error)}`;
-        console.log(errorMessage);
-        reject(errorMessage);
-    }
-
 }
 
 module.exports.Blockchain = Blockchain;   

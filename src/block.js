@@ -11,6 +11,7 @@
 
 const SHA256 = require('crypto-js/sha256');
 const hex2ascii = require('hex2ascii');
+const { handleError } = require('./util');
 
 class Block {
 
@@ -55,7 +56,7 @@ class Block {
                     resolve(true);
                 }
             } catch (error) {
-                self._handleError(error, "validate", reject);
+                handleError(error, "validate", reject);
             }
         });
     }
@@ -84,9 +85,8 @@ class Block {
                 // Resolve with the data if the object isn't the Genesis block
                 resolve(body);
             } catch (error) {
-                self._handleError(error, "getBData", reject);
+                handleError(error, "getBData", reject);
             }
-            
         });
     }
 
@@ -101,12 +101,6 @@ class Block {
             return true;
         }
         return false;
-    }
-
-    _handleError(error, methodName, reject) {
-        const errorMessage = `${methodName} threw an error: ${JSON.stringify(error)}`;
-        console.log(errorMessage);
-        reject(errorMessage);
     }
 }
 
