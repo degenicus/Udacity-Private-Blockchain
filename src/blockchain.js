@@ -65,7 +65,7 @@ class Blockchain {
         const self = this;
         return new Promise(async (resolve, reject) => {
             try {
-                const errors = this.validateChain();
+                const errors = await this.validateChain();
                 if (errors.length > 0) {
                     reject(errors);
                 }
