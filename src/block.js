@@ -44,7 +44,7 @@ class Block {
                 // Copy block to avoid data mutation
                 const blockCopy = JSON.parse(JSON.stringify(self));
                 // Recalculate the hash of the Block
-                blockCopy.hash = '';
+                blockCopy.hash = null;
                 const currentHash = SHA256(JSON.stringify(blockCopy)).toString();
                 // Comparing if the hashes changed
                 if (blockHash !== currentHash) {

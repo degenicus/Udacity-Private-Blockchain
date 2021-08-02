@@ -65,6 +65,10 @@ class Blockchain {
         const self = this;
         return new Promise(async (resolve, reject) => {
             try {
+                const errors = this.validateChain();
+                if (errors.length > 0) {
+                    reject(errors);
+                }
                 if (self.height > -1) {
                     block.previousBlockHash = self.chain[self.height].hash;
                 }
@@ -191,28 +195,35 @@ class Blockchain {
     validateChain() {
         const self = this;
         return new Promise(async (resolve) => {
-            const errorLog = Promise.all(self.chain.flatMap(async block => {
-                const isBlockValid = await block.validate();
-                let hasPreviousBlock = true;
-                if (block.height > 0) {
-                    const previousBlock = await self.getBlockByHash(block.previousBlockHash);
-                    if (!previousBlock) {
-                        hasPreviousBlock = false;
+            try {
+                const errorLog = await Promise.all(self.chain.map(async block => {
+                    const isBlockValid = await block.validate();
+                    let hasPreviousBlock = true;
+                    if (block.height > 0) {
+                        const previousBlock = await self.getBlockByHash(block.previousBlockHash);
+                        if (!previousBlock) {
+                            hasPreviousBlock = false;
+                        }
                     }
-                }
-                if (!isBlockValid || !hasPreviousBlock) {
-                    let errorMessage = `Invalid block: ${JSON.stringify(block)}`;
-                    if (!isBlockValid) {
-                        errorMessage += " block did not pass .validate()";
+                    if (!isBlockValid || !hasPreviousBlock) {
+                        let errorMessage = `Invalid block: ${JSON.stringify(block)}`;
+                        if (!isBlockValid) {
+                            errorMessage += " block did not pass .validate()";
+                        }
+                        if (!hasPreviousBlock) {
+                            errorMessage += " previous block is missing";
+                        }
+                        return errorMessage;
                     }
-                    if (!hasPreviousBlock) {
-                        errorMessage += " previous block is missing";
-                    }
-                    return [errorMessage];
-                }
-                return [];
-            }));
-            resolve(errorLog);
+                    return null;
+                }));
+
+                const onlyErrors = errorLog.filter(err => err !== null);
+                resolve(onlyErrors);
+            } catch (error) {
+                self._handleError(error, "validateChain", reject);
+            }
+            
         });
     }
 
